@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ../backend-api
+    container_name: backend-api
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - DB_HOST=db
+      - DB_USER=centinela
+      - DB_PASSWORD=centinela
+      - DB_NAME=centinela
+    depends_on:
+      - rabbitmq
+      - db
+
+  scraping-service:
+    build: ../scraping-service
+    container_name: scraping-service
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+
+  # Puedes agregar aquí analysis-service
+  analysis-service:
+    build: ../analysis-service
+    container_name: analysis-service
+    depends_on:
+      - rabbitmq
+      - db
+
+  # Y aquí publishing-service si lo usas
+  publishing-service:
+    build: ../publishing-service
+    container_name: publishing-service
+    depends_on:
+      - rabbitmq
+      - db
+
+  db:
+    image: postgres:15
+    container_name: centinela-db
+    environment:
+      - POSTGRES_USER=centinela
+      - POSTGRES_PASSWORD=centinela
+      - POSTGRES_DB=centinela
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: centinela-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  db_data:
