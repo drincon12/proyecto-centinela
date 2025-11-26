@@ -38,6 +38,7 @@ jobs:
         with:
           context: ./backend-api
           tags: backend-api:ci-latest
+          load: true        # Aquí hacemos que la imagen quede disponible en Docker del runner
           push: false
 
       - name: Scan backend image with Trivy
