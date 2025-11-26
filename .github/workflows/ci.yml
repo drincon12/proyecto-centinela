@@ -1,0 +1,51 @@
+name: CI DevSecOps
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+
+jobs:
+  sast-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SAST tools
+        run: |
+          pip install semgrep bandit
+
+      - name: Run Bandit
+        run: |
+          bandit -r backend-api scraping-service analysis-service publishing-service || true
+
+      - name: Run Semgrep
+        run: |
+          semgrep --config p/ci || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend-api
+          tags: backend-api:ci-latest
+          push: false
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          image-ref: "backend-api:ci-latest"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          format: "table"
+          exit-code: "0"
