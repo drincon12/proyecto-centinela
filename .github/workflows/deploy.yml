@@ -1,0 +1,20 @@
+name: Deploy Centinela (docker-compose)
+
+on:
+  workflow_dispatch:   # se lanza manualmente desde la pestaña Actions
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and run stack with docker compose
+        working-directory: ./deploy
+        run: |
+          docker compose up --build -d
