@@ -10,12 +10,27 @@ class ScrapeRequest(BaseModel):
 
 app = FastAPI(title="Centinela API Gateway")
 
+#  Orígenes permitidos (frontend en dev y en VM)
+origins = [
+    "http://localhost:5173",        # Vite en tu máquina
+    "http://192.168.254.128",       # Frontend en la VM (cuando lo levantemos en 80)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],       # en producción lo ideal es poner origen específico
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Valores por defecto: en local no pasará nada raro si no hay RabbitMQ
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "scraping_requests")
 
 
-def send_to_queue(queue_name: str, payload: str) -> None:
+def send_to_queue(queue_name: str, payload: str):
     """
     Envía un mensaje a la cola de RabbitMQ.
     """
