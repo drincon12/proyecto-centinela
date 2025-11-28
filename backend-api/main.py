@@ -1,13 +1,18 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 import os
 import pika
 import requests
 
-
 app = FastAPI(title="Centinela API Gateway")
 
+# ======== MODELOS =========
+
 class ScrapeRequest(BaseModel):
+    url: HttpUrl
+
+class AnalyzeRequest(BaseModel):
     url: HttpUrl
 
 class AnalyzeResult(BaseModel):
@@ -17,25 +22,26 @@ class AnalyzeResult(BaseModel):
     score: float
     label: str
 
-#  Orígenes permitidos (frontend en dev y en VM)
+# ======== CORS =========
+
 origins = [
-    "http://localhost:5173",        # Vite en tu máquina
-    "http://192.168.254.128",       # Frontend en la VM (cuando lo levantemos en 80)
+    "http://localhost:5173",      # Vite en tu máquina
+    "http://192.168.254.128",     # Frontend en VM (si lo levantas en 80)
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # en producción lo ideal es poner origen específico
+    allow_origins=["*"],           # para el proyecto dejamos todo abierto
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# Valores por defecto: para RabbitMQ y ANAYSIS 
+# ======== CONFIG =========
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "scraping_requests")
+
 ANALYSIS_HOST = os.getenv("ANALYSIS_HOST", "analysis-service")
 ANALYSIS_PORT = int(os.getenv("ANALYSIS_PORT", "9000"))
 
@@ -57,20 +63,19 @@ def send_to_queue(queue_name: str, payload: str):
     connection.close()
 
 
+# ======== ENDPOINTS =========
+
 @app.get("/health")
 def health():
-    """
-    Endpoint de salud del backend.
-    """
     return {"status": "ok"}
 
 
 @app.post("/scrape")
 def scrape(request: ScrapeRequest):
     """
-    Recibe una URL y la envía a la cola de scraping.
+    Recibe una URL y la envía a la cola de scraping (modo asíncrono).
     """
-    url = request.url
+    url = str(request.url)
 
     if not url.startswith("http"):
         raise HTTPException(status_code=400, detail="URL inválida")
@@ -78,13 +83,13 @@ def scrape(request: ScrapeRequest):
     try:
         send_to_queue(RABBITMQ_QUEUE, url)
     except Exception as e:
-        # RabbitMQ puede no estar levantado en desarrollo.
         raise HTTPException(
             status_code=503,
-            detail="No se pudo enviar la tarea de scraping (servicio de cola no disponible)",
+            detail="No se pudo enviar la tarea de scraping (cola no disponible)",
         ) from e
 
     return {"message": "URL recibida para scraping", "url": url}
+
 
 @app.post("/analyze", response_model=AnalyzeResult)
 def analyze(req: AnalyzeRequest):
@@ -99,7 +104,10 @@ def analyze(req: AnalyzeRequest):
             timeout=30,
         )
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Error llamando a analysis-service: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Error llamando a analysis-service: {exc}",
+        )
 
     if resp.status_code != 200:
         raise HTTPException(
@@ -107,7 +115,4 @@ def analyze(req: AnalyzeRequest):
             detail=f"analysis-service devolvió error: {resp.text}",
         )
 
-    data = resp.json()
-    # FastAPI validará automáticamente contra AnalyzeResult
-    return data
-
+    return resp.json()

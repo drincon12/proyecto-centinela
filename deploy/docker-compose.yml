@@ -1,6 +1,15 @@
 version: "3.9"
 
 services:
+
+  frontend:
+    build: ../frontend
+    container_name: centinela-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
   backend:
     build: ../backend-api
     container_name: backend-api
@@ -31,6 +40,8 @@ services:
     depends_on:
       - rabbitmq
       - db
+    ports:
+      - "9000:9000" # para pruebas desde el host, se vea http://analysis-service:9000
 
   # Y aquí publishing-service si lo usas
   publishing-service:

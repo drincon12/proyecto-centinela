@@ -1,2 +1,6 @@
 textblob
 pika
+fastapi
+uvicorn[standard]
+requests
+beautifulsoup4
