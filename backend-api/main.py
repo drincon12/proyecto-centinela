@@ -1,14 +1,21 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 import os
 import pika
-
-
-class ScrapeRequest(BaseModel):
-    url: str
+import requests
 
 
 app = FastAPI(title="Centinela API Gateway")
+
+class ScrapeRequest(BaseModel):
+    url: HttpUrl
+
+class AnalyzeResult(BaseModel):
+    url: HttpUrl
+    title: str
+    summary: str
+    score: float
+    label: str
 
 #  Orígenes permitidos (frontend en dev y en VM)
 origins = [
@@ -25,9 +32,12 @@ app.add_middleware(
 )
 
 
-# Valores por defecto: en local no pasará nada raro si no hay RabbitMQ
+# Valores por defecto: para RabbitMQ y ANAYSIS 
+
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "scraping_requests")
+ANALYSIS_HOST = os.getenv("ANALYSIS_HOST", "analysis-service")
+ANALYSIS_PORT = int(os.getenv("ANALYSIS_PORT", "9000"))
 
 
 def send_to_queue(queue_name: str, payload: str):
@@ -75,3 +85,29 @@ def scrape(request: ScrapeRequest):
         ) from e
 
     return {"message": "URL recibida para scraping", "url": url}
+
+@app.post("/analyze", response_model=AnalyzeResult)
+def analyze(req: AnalyzeRequest):
+    """
+    Recibe la URL desde el frontend y delega el trabajo al microservicio
+    analysis-service, que hace scraping + análisis básico.
+    """
+    try:
+        resp = requests.post(
+            f"http://{ANALYSIS_HOST}:{ANALYSIS_PORT}/analyze",
+            json={"url": str(req.url)},
+            timeout=30,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Error llamando a analysis-service: {exc}")
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"analysis-service devolvió error: {resp.text}",
+        )
+
+    data = resp.json()
+    # FastAPI validará automáticamente contra AnalyzeResult
+    return data
+
