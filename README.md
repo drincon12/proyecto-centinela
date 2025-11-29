@@ -1,92 +1,140 @@
-README — Proyecto Centinela - Grupo 4 
 
-Plataforma contenerizada de análisis de desinformación con pipeline DevSecOps completo
+🛡️ PROYECTO CENTINELA — GRUPO 4
 
-## 1. Objetivo general
 
-Diseñar, implementar, desplegar y operar una aplicación de microservicios que:
+Plataforma contenerizada DevSecOps para análisis de desinformación y OSINT
 
-- Reciba URLs sospechosas.
-- Realice scraping y un análisis básico de riesgo.
-- Almacene los resultados en una base de datos.
-- Expuesta a través de un frontend SPA para analistas de seguridad.
-- Se integre con un pipeline de CI/CD y herramientas FOSS de seguridad.
+📌 Descripción General
+Centinela es una plataforma de análisis de URLs sospechosas que detecta amenazas, malware y desinformación. Implementa un pipeline DevSecOps completo con herramientas FOSS, integrando seguridad desde la planificación hasta la operación.
 
-1. Descripción General
+🧱 Arquitectura del Proyecto
+🔧 Componentes
+frontend: React + Vite servido con Nginx
 
-Proyecto Centinela es una plataforma de análisis de desinformación que implementa un pipeline DevSecOps de ciclo completo, integrando seguridad en todas las fases del desarrollo mediante herramientas 100% open source (FOSS).
+backend: FastAPI para orquestación y endpoints
 
-El objetivo principal del proyecto no es construir una aplicación compleja, sino demostrar el uso de DevSecOps extremo a extremo: seguridad en el código, seguridad en la construcción de imágenes, pruebas dinámicas, escaneo de infraestructura y seguridad en tiempo real.
+scraping-service: extrae contenido HTML y lo envía a RabbitMQ
 
-## 2. Arquitectura
+publishing-service: publica resultados en cola
 
-La solución se compone de los siguientes servicios:
+analysis-api: expone resultados vía API
 
-- **Frontend (React / Vite)**  
-  SPA que ofrece:
-  - Dashboard de seguridad (métricas y últimos análisis).
-  - Analizador de URLs.
-  - Vista de monitoreo (logs / métricas de la plataforma).
+analysis-worker: ejecuta análisis de desinformación
 
-- **Backend API (FastAPI)**  
-  Actúa como **API Gateway**:
-  - `POST /scrape`: envía URLs a RabbitMQ para procesamiento asíncrono.
-  - `POST /analyze`: llama a `analysis-service` y devuelve el resultado al frontend.
-  - `GET /health`: endpoint de salud.
-  - `GET /metrics`: exporta métricas Prometheus.
+postgres: base de datos relacional
 
-- **Scraping Service (Python)**  
-  Worker que encola y procesa tareas provenientes de RabbitMQ (pendiente de extender para scraping avanzado).
+rabbitmq: broker de mensajería
 
-- **Analysis Service (FastAPI)**  
-  Microservicio que:
-  - Recibe una URL.
-  - Hace scraping HTTP básico.
-  - Extrae título y resumen del contenido.
-  - Calcula un `score` y un `label` (LOW / MEDIUM / HIGH).
-  - Persiste el resultado en PostgreSQL.
+grafana: visualización de métricas/logs
 
-- **Publishing Service (placeholder)**  
-  Servicio preparado para futuras integraciones con APIs sociales (Mastodon, Reddit, X/Twitter).
+prometheus: recolección de métricas
 
-- **Base de Datos (PostgreSQL)**  
-  Almacena los análisis realizados en la tabla `url_analysis`.
+loki: agregación de logs
 
-- **Broker de Mensajes (RabbitMQ)**  
-  Facilita la comunicación asíncrona entre el API Gateway y los workers de scraping.
+promtail: recolección de logs
 
-- **Monitoreo (Prometheus + Grafana)**  
-  - `backend-api` expone métricas en `/metrics`.
-  - Prometheus scrapea las métricas.
-  - Grafana muestra dashboards con:
-    - tráfico del API.
-    - latencias de `/analyze`.
+falco: monitoreo de seguridad en tiempo real
 
-### Diagrama (alta nivel)
+📁 Estructura del Proyecto
+Código
+proyecto-centinela/
+├── backend/
+├── frontend/
+├── scraping-service/
+├── publishing-service/
+├── analysis-api/
+├── analysis-worker/
+├── deploy/
+│   ├── Monitoring/ (Grafana, Prometheus, Loki, Promtail)
+│   └── Security/ (Falco)
+├── docker-compose.yml
+├── .github/workflows/ (CI/CD DevSecOps)
+└── docs/ (diagramas Threat Dragon, evidencias)
+🧠 Diseño de Arquitectura
+Modelado de amenazas con OWASP Threat Dragon (STRIDE + DFD)
 
-*(aquí puedes insertar una imagen con el diagrama de contenedores)*
+Diagrama de componentes completo en docs/
 
-## 3. Tecnologías principales
+Evidencias en Issue #1 y workflows
 
-- **Frontend**: React, Vite, CSS personalizado.
-- **Backend / Servicios**: Python, FastAPI, Requests, BeautifulSoup.
-- **Mensajería**: RabbitMQ.
-- **Base de Datos**: PostgreSQL.
-- **Contenedores**: Docker, Docker Compose.
-- **CI/CD**: GitHub Actions (build, pruebas, SAST con Checkov / etc.).
-- **Monitoreo**: Prometheus, Grafana.
+🔐 Pipeline DevSecOps — Fases y Herramientas
+🟣 Fase 1: Planificación
+Actividad: Requisitos de seguridad, modelado de amenazas
 
-## 4. Puesta en marcha local
+Herramientas: GitHub Issues, OWASP Threat Dragon
 
-### 4.1. Requisitos
+Evidencia: Issue #1
 
-- Docker + Docker Compose
-- Git
-- Node.js 18+ (para desarrollo del frontend)
-- Python 3.11+ (para desarrollo local fuera de contenedores)
+🔵 Fase 2: Codificación
+Actividad: Desarrollo, SAST, SCA, pre-commit
 
-### 4.2. Clonar repositorio
+Herramientas:
 
-```bash
+Gitleaks (pre-commit)
+
+Semgrep + Bandit (SAST)
+
+Trivy (SCA)
+
+Evidencia: Issue #8
+
+🟢 Fase 3: Construcción
+Actividad: Build de imágenes, escaneo de CVEs
+
+Herramientas: Docker, Trivy, GitHub Actions
+
+Evidencia: .github/workflows/devsecops.yml
+
+🟡 Fase 4: Pruebas
+Actividad: Unitarias, integración, DAST
+
+Herramientas: Pytest, OWASP ZAP (baseline scan)
+
+Evidencia: ZAP integrado en CI
+
+🟠 Fase 5: Release & Deploy
+Actividad: Versionado, despliegue con IaC
+
+Herramientas: Docker Compose, Trivy (IaC scan)
+
+Evidencia: docker-compose.yml, deploy/
+
+🔴 Fase 6: Operación y Monitoreo
+Actividad: Logs, métricas, seguridad en tiempo real
+
+Herramientas: Prometheus, Grafana, Loki, Promtail, Falco
+
+Evidencia: Issue #10
+
+📊 Observabilidad
+Logs centralizados con Loki + Promtail
+
+Métricas con Prometheus
+
+Dashboards en Grafana
+
+Seguridad en tiempo real con Falco
+
+⚙️ Requisitos Previos
+Docker y Docker Compose
+
+Node.js y npm (para desarrollo local del frontend)
+
+Python 3.11+ con venv (para backend y servicios)
+
+Acceso a puertos: 3000, 8000, 9000, 3100, 9090, 17673, 5432
+
+🚀 Despliegue Local
+bash
 git clone https://github.com/drincon12/proyecto-centinela.git
 cd proyecto-centinela
+docker compose up -d --build
+Accede a:
+
+Frontend: http://localhost:3000
+
+Backend: http://localhost:8000
+
+Grafana: http://localhost:3001
+
+RabbitMQ: http://localhost:17673
