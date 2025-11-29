@@ -1,0 +1,174 @@
+services:        # Aquí definimos todos los servicios (contenedores) que forman el proyecto
+
+  # Servicio del frontend (interfaz web)
+  frontend:
+    build: ./frontend
+    container_name: centinela-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - centinela-net
+
+  # Servicio del backend (API principal)
+  backend:
+    build: ./backend-api
+    container_name: centinela-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://centinela:centinela@postgres:5432/centinela_db
+      - RABBITMQ_URL=amqp://centinela:centinela@rabbitmq:5672/
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - centinela-net
+
+  # Servicio que hace scraping (extrae datos de las páginas)
+  scraping:
+    build: ./scraping-service
+    container_name: centinela-scraping
+    environment:
+      - RABBITMQ_URL=amqp://centinela:centinela@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - centinela-net
+
+  # API de análisis con FastAPI
+  analysis-api:
+    build: ./analysis-service
+    container_name: centinela-analysis-api
+    ports:
+      - "9000:9000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=centinela_db
+      - DB_USER=centinela
+      - DB_PASSWORD=centinela
+    depends_on:
+      - postgres
+    networks:
+      - centinela-net
+
+  # --- Worker de análisis que consume la cola ---
+  analysis-worker:
+    build: ./analysis-worker
+    container_name: centinela-analysis-worker
+    environment:
+      - RABBITMQ_URL=amqp://centinela:centinela@rabbitmq:5672/
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=centinela_db
+      - DB_USER=centinela
+      - DB_PASSWORD=centinela
+      - QUEUE_NAME=analysis.jobs
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - centinela-net
+
+  # Servicio que publica resultados en redes sociales
+  publishing:
+    build: ./publishing-service
+    container_name: centinela-publishing
+    environment:
+      - RABBITMQ_URL=amqp://centinela:centinela@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - centinela-net
+
+  # Servicio de base de datos PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: centinela-postgres
+    environment:
+      - POSTGRES_USER=centinela
+      - POSTGRES_PASSWORD=centinela
+      - POSTGRES_DB=centinela_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - centinela-net
+
+  # Servicio de mensajería RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: centinela-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=centinela
+      - RABBITMQ_DEFAULT_PASS=centinela
+      - RABBITMQ_LOAD_DEFINITIONS=true
+      - RABBITMQ_DEFINITIONS_FILE=/etc/rabbitmq/definitions.json
+    ports:
+      - "5672:5672"
+      - "17673:15672"
+    volumes:
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - centinela-net
+
+  # Servicio de Prometheus (monitorización de métricas)
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    container_name: centinela-prometheus
+    volumes:
+      - ./deploy/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - centinela-net
+
+  # Servicio de Grafana (visualización de métricas)
+  grafana:
+    image: grafana/grafana
+    container_name: centinela-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/Monitoring/Grafana/datasources/Grafana.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    networks:
+      - centinela-net
+
+  # Servicio Loki (almacenamiento de logs)
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: centinela-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./deploy/monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - centinela-net
+
+  # Servicio Promtail (recolector de logs para Loki)
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: centinela-promtail
+    volumes:
+      - /var/log:/var/log
+      - ./deploy/Monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml
+    command: -config.file=/etc/promtail/promtail.yml
+    networks:
+      - centinela-net
+
+volumes:         # Definición de volúmenes persistentes
+  postgres_data:
+  grafana_data:
+
+networks:        # Definición de redes
+  centinela-net:
+    driver: "bridge"

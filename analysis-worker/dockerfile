@@ -1,0 +1,33 @@
+# Imagen base ligera de Python
+FROM python:3.10-slim
+
+# Evita escribir cachés en el contenedor
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Instala dependencias del sistema necesarias para compilar/operar
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copia requirements e instala
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia el código fuente
+COPY worker.py .
+
+# Variables de entorno por defecto (puedes sobreescribir en docker-compose)
+ENV RABBITMQ_URL=amqp://centinela:centinela@rabbitmq:5672/
+ENV DB_HOST=postgres
+ENV DB_PORT=5432
+ENV DB_NAME=centinela_db
+ENV DB_USER=centinela
+ENV DB_PASSWORD=centinela
+
+# Comando por defecto
+CMD ["python", "worker.py"]
+

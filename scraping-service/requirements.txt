@@ -1,3 +1,4 @@
-requests
-beautifulsoup4
-pika
+requests          # Para descargar páginas web
+beautifulsoup4    # Para parsear y extraer contenido HTML
+pika              # Cliente de RabbitMQ para consumir la cola scraping_queue
+

@@ -1,5 +1,11 @@
-import os
-import time
+import pika
+
+# Conexión a RabbitMQ
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+channel = connection.channel()
+
+# Declarar la cola (por si no existe)
+channel.queue_declare(queue='publish_queue', durable=True)
 
 
 def publish(content: str, target: str = "social"):
@@ -10,7 +16,15 @@ def publish(content: str, target: str = "social"):
     print(f"[publishing] Publicando en {target}: {content[:80]}...")
 
 
-if __name__ == "__main__":
-    publish("Ejemplo de contenido verificado del Proyecto Centinela.")
-    time.sleep(1)
-    print("[publishing] Publicación simulada completada.")
+# Función que procesa cada mensaje
+def callback(ch, method, properties, body):
+    content = body.decode()
+    print(f"Procesando mensaje para publicar: {content}")
+    publish(content)
+
+
+# Escuchar la cola
+channel.basic_consume(queue='publish_queue', on_message_callback=callback, auto_ack=True)
+
+print("Esperando mensajes en publish_queue...")
+channel.start_consuming()

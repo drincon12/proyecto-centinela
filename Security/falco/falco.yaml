@@ -1,0 +1,67 @@
+# Usa las reglas por defecto de Falco
+rules_file:
+  - /etc/falco/falco_rules.yaml
+
+# Salida
+json_output: true
+output_format: json
+time_format_iso_8601: true
+
+# Salidas (asegúrate de NO tener "stdout_output: true" en ningún lado)
+stdout_output:
+  enabled: true
+
+file_output:
+  enabled: true
+  filename: /var/log/falco-events.json
+
+# Control de drops
+syscall_event_drops:
+  threshold: 0.1
+
+# Plugins: container
+plugins:
+  - name: container
+    library_path: /usr/share/falco/plugins/libcontainer.so
+
+load_plugins:
+  - container
+
+# Reglas personalizadas (formato del repo de referencia)
+custom_rules:
+  - rule: Shell Spawned in Frontend Container
+    desc: Detecta shell en contenedor de frontend (comportamiento anómalo)
+    condition: >
+      container.name = "centinela-frontend" and
+      evt.type = execve and
+      proc.name in ("sh", "bash", "zsh")
+    output: >
+      Shell spawned in frontend container (user=%user.name container=%container.name
+      shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)
+    priority: WARNING
+    tags: [container, centinela, frontend]
+
+  - rule: Unauthorized Database Access
+    desc: Detecta acceso no autorizado a la base de datos
+    condition: >
+      container.name = "centinela-postgres" and
+      evt.type = connect and
+      not user.name in ("centinela", "postgres")
+    output: >
+      Unauthorized database access (user=%user.name container=%container.name
+      connection=%fd.name)
+    priority: ERROR
+    tags: [container, centinela, database, security]
+
+  - rule: File Modification in Backend
+    desc: Detecta modificación de archivos en contenedor de backend
+    condition: >
+      container.name = "centinela-backend" and
+      evt.type in ("open", "openat") and
+      evt.is_open_write = true and
+      fd.name not in ("/tmp", "/var/log")
+    output: >
+      File modification in backend container (user=%user.name container=%container.name
+      file=%fd.name)
+    priority: NOTICE
+    tags: [container, centinela, backend]

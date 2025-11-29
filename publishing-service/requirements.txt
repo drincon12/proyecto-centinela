@@ -1,2 +1,4 @@
-requests
-python-dotenv
+requests          # Para hacer llamadas HTTP a APIs de redes sociales
+python-dotenv     # Para cargar variables de entorno desde un archivo .env
+pika              # Cliente de RabbitMQ para consumir la cola publish_queue
+

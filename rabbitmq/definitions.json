@@ -1,0 +1,41 @@
+{
+  "rabbit_version": "3.12.0",
+  "users": [
+    {
+      "name": "centinela",
+      "password": "centinela",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "centinela",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "scraping_queue",
+      "vhost": "/",
+      "durable": true
+    },
+    {
+      "name": "analytics_queue",
+      "vhost": "/",
+      "durable": true
+    },
+    {
+      "name": "publish_queue",
+      "vhost": "/",
+      "durable": true
+    }
+  ]
+}

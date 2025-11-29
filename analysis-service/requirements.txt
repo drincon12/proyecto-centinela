@@ -1,7 +1,7 @@
-textblob
-pika
-fastapi
-uvicorn[standard]
-requests
-beautifulsoup4
-psycopg2-binary
+textblob          # NLP básico para análisis de sentimiento
+pika              # Cliente de RabbitMQ para consumir la cola analysis_queue
+fastapi           # Framework para la API
+uvicorn[standard] # Servidor ASGI para correr FastAPI
+requests          # Para descargar páginas web
+beautifulsoup4    # Para parsear HTML
+psycopg2-binary   # Cliente de PostgreSQL
