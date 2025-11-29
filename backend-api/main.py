@@ -35,6 +35,7 @@ class PublishRequest(BaseModel):
 
 origins: List[str] = [
     "http://localhost:5173",      # Vite en tu máquina
+    "http://localhost:3000",      # Frontend en Docker mapeado a 3000
 ]
 
 app.add_middleware(
