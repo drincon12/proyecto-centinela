@@ -9,7 +9,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Conexión a RabbitMQ
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+import pika
+
+credentials = pika.PlainCredentials('centinela', 'centinela')
+parameters = pika.ConnectionParameters(host='rabbitmq', credentials=credentials)
+connection = pika.BlockingConnection(parameters)
+channel = connection.channel()
+
 channel = connection.channel()
 
 # Declarar la cola (por si no existe)

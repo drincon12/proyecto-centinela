@@ -1,7 +1,10 @@
 import pika
 
 # Conexión a RabbitMQ
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+credentials = pika.PlainCredentials('centinela', 'centinela')
+parameters = pika.ConnectionParameters(host='rabbitmq', credentials=credentials)
+connection = pika.BlockingConnection(parameters)
+
 channel = connection.channel()
 
 # Declarar la cola (por si no existe)
