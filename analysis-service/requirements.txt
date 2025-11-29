@@ -4,3 +4,4 @@ fastapi
 uvicorn[standard]
 requests
 beautifulsoup4
+psycopg2-binary

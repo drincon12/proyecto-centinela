@@ -2,8 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 // Usa variable de entorno si existe, si no, apunta directo a tu VM
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://192.168.254.128:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://192.168.254.128:8000";
 
 function App() {
   const [url, setUrl] = useState("");
@@ -24,7 +23,6 @@ function App() {
     try {
       setLoading(true);
 
-      // 👉 ahora llamamos al endpoint /analyze del backend
       const resp = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,7 +30,7 @@ function App() {
       });
 
       if (!resp.ok) {
-        const txt = await resp.text(); // <- nombre correcto
+        const txt = await resp.text();
         throw new Error(`Error del backend: ${resp.status} - ${txt}`);
       }
 
@@ -47,91 +45,61 @@ function App() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#111",
-        color: "#fff",
-        padding: "3rem",
-      }}
-    >
-      <h1 style={{ fontSize: "3rem", marginBottom: "1rem" }}>Centinela</h1>
-      <p style={{ maxWidth: 600, marginBottom: "2rem", color: "#ccc" }}>
-        Plataforma para análisis básico de desinformación / OSINT.
-      </p>
-
-      <form onSubmit={handleSubmit} style={{ maxWidth: 600, marginBottom: "1rem" }}>
-        <label style={{ display: "block", marginBottom: "0.5rem" }}>
-          URL a analizar:
-        </label>
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.ejemplo.com/noticia"
-          style={{
-            width: "100%",
-            padding: "0.75rem 1rem",
-            borderRadius: 4,
-            border: "1px solid #444",
-            background: "#222",
-            color: "#fff",
-            marginBottom: "1rem",
-          }}
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: "0.75rem 1.5rem",
-            borderRadius: 4,
-            border: "none",
-            background: loading ? "#555" : "#1d9bf0",
-            color: "#fff",
-            fontWeight: "bold",
-            cursor: loading ? "default" : "pointer",
-          }}
-        >
-          {loading ? "Analizando..." : "Enviar a scraping"}
-        </button>
-      </form>
-
-      {error && (
-        <p style={{ color: "#ff6b6b", marginTop: "1rem" }}>
-          <strong>Error:</strong> {error}
-        </p>
-      )}
-
-      {result && (
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1.5rem",
-            background: "#1a1a1a",
-            borderRadius: 8,
-            maxWidth: 800,
-          }}
-        >
-          <h2 style={{ marginBottom: "0.5rem" }}>Resultado</h2>
-
-          <p>
-            <strong>URL:</strong> {result.url}
+    <div className="centinela-root">
+      {/* Aquí mantienes tu layout tipo mockup: navbar, etc.
+          Yo solo dejo el área del Analizador de URL */}
+      <main className="analizador-layout">
+        <section className="analizador-card">
+          <h1>Analizador de URLs</h1>
+          <p className="analizador-subtitle">
+            Detecta amenazas, malware y desinformación en sitios web.
           </p>
-          <p>
-            <strong>Título:</strong> {result.title}
-          </p>
-          <p>
-            <strong>Resumen:</strong> {result.summary}
-          </p>
-          <p>
-            <strong>Score:</strong> {(result.score * 100).toFixed(1)}%
-          </p>
-          <p>
-            <strong>Clasificación:</strong> {result.label}
-          </p>
-        </div>
-      )}
+
+          <form onSubmit={handleSubmit} className="analizador-form">
+            <label>Ingresa una URL para analizar</label>
+            <span className="ejemplo">Ejemplo: https://ejemplo.com</span>
+
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://ejemplo.com"
+            />
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Analizando..." : "Analizar"}
+            </button>
+          </form>
+
+          {error && (
+            <p className="error-text">
+              <strong>Error:</strong> {error}
+            </p>
+          )}
+        </section>
+
+        {result && (
+          <section className="resultado-card">
+            <h2>Nivel de Amenaza</h2>
+            <div className={`badge badge-${result.label.toLowerCase()}`}>
+              {result.label}
+            </div>
+
+            <div className="resultado-meta">
+              <span>URL analizada:</span>
+              <code>{result.url}</code>
+            </div>
+
+            <div className="resultado-detalle">
+              <h3>{result.title}</h3>
+              <p>{result.summary}</p>
+              <p className="resultado-score">
+                Score: {result.score.toFixed(2)}
+              </p>
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }

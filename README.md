@@ -2,93 +2,91 @@ README — Proyecto Centinela - Grupo 4
 
 Plataforma contenerizada de análisis de desinformación con pipeline DevSecOps completo
 
+## 1. Objetivo general
+
+Diseñar, implementar, desplegar y operar una aplicación de microservicios que:
+
+- Reciba URLs sospechosas.
+- Realice scraping y un análisis básico de riesgo.
+- Almacene los resultados en una base de datos.
+- Expuesta a través de un frontend SPA para analistas de seguridad.
+- Se integre con un pipeline de CI/CD y herramientas FOSS de seguridad.
+
 1. Descripción General
 
 Proyecto Centinela es una plataforma de análisis de desinformación que implementa un pipeline DevSecOps de ciclo completo, integrando seguridad en todas las fases del desarrollo mediante herramientas 100% open source (FOSS).
 
 El objetivo principal del proyecto no es construir una aplicación compleja, sino demostrar el uso de DevSecOps extremo a extremo: seguridad en el código, seguridad en la construcción de imágenes, pruebas dinámicas, escaneo de infraestructura y seguridad en tiempo real.
 
-2. Arquitectura General del Proyecto
+## 2. Arquitectura
 
-El sistema está compuesto por microservicios independientes, contenerizados con Docker:
+La solución se compone de los siguientes servicios:
 
- - Frontend: SPA en React/Vue (input de URL y visualización de resultados)
+- **Frontend (React / Vite)**  
+  SPA que ofrece:
+  - Dashboard de seguridad (métricas y últimos análisis).
+  - Analizador de URLs.
+  - Vista de monitoreo (logs / métricas de la plataforma).
 
- - Backend API Gateway: FastAPI / Node.js
+- **Backend API (FastAPI)**  
+  Actúa como **API Gateway**:
+  - `POST /scrape`: envía URLs a RabbitMQ para procesamiento asíncrono.
+  - `POST /analyze`: llama a `analysis-service` y devuelve el resultado al frontend.
+  - `GET /health`: endpoint de salud.
+  - `GET /metrics`: exporta métricas Prometheus.
 
- - Servicio de Scraping: Python + BeautifulSoup
+- **Scraping Service (Python)**  
+  Worker que encola y procesa tareas provenientes de RabbitMQ (pendiente de extender para scraping avanzado).
 
- - Servicio de Análisis: Python + NLP (NLTK/VADER)
+- **Analysis Service (FastAPI)**  
+  Microservicio que:
+  - Recibe una URL.
+  - Hace scraping HTTP básico.
+  - Extrae título y resumen del contenido.
+  - Calcula un `score` y un `label` (LOW / MEDIUM / HIGH).
+  - Persiste el resultado en PostgreSQL.
 
- - Base de Datos: PostgreSQL o MongoDB
+- **Publishing Service (placeholder)**  
+  Servicio preparado para futuras integraciones con APIs sociales (Mastodon, Reddit, X/Twitter).
 
- - Mensajería: RabbitMQ o Redis
+- **Base de Datos (PostgreSQL)**  
+  Almacena los análisis realizados en la tabla `url_analysis`.
 
- - Orquestación: Docker Compose / K3s
+- **Broker de Mensajes (RabbitMQ)**  
+  Facilita la comunicación asíncrona entre el API Gateway y los workers de scraping.
 
- - Pipeline CI/CD/CS: GitHub Actions (antes GitLab CI)
+- **Monitoreo (Prometheus + Grafana)**  
+  - `backend-api` expone métricas en `/metrics`.
+  - Prometheus scrapea las métricas.
+  - Grafana muestra dashboards con:
+    - tráfico del API.
+    - latencias de `/analyze`.
 
-📌 Todos los servicios cuentan con su propio Dockerfile y se despliegan mediante docker-compose.yml o manifests de Kubernetes (opcional).
+### Diagrama (alta nivel)
 
-3. DevSecOps: Fases y Herramientas Utilizadas
+*(aquí puedes insertar una imagen con el diagrama de contenedores)*
 
-A continuación se documenta paso a paso qué se implementó en cada fase.
+## 3. Tecnologías principales
 
-🗂️ 4. FASE 1 — PLAN
-✔ Actividades realizadas
+- **Frontend**: React, Vite, CSS personalizado.
+- **Backend / Servicios**: Python, FastAPI, Requests, BeautifulSoup.
+- **Mensajería**: RabbitMQ.
+- **Base de Datos**: PostgreSQL.
+- **Contenedores**: Docker, Docker Compose.
+- **CI/CD**: GitHub Actions (build, pruebas, SAST con Checkov / etc.).
+- **Monitoreo**: Prometheus, Grafana.
 
-  - Definición de requisitos funcionales y no funcionales.
+## 4. Puesta en marcha local
 
-  - Identificación de posibles amenazas al sistema.
+### 4.1. Requisitos
 
-  - Construcción de un Modelo de Amenazas usando OWASP Threat Dragon.
+- Docker + Docker Compose
+- Git
+- Node.js 18+ (para desarrollo del frontend)
+- Python 3.11+ (para desarrollo local fuera de contenedores)
 
-  - Elaboración del Diagrama de Flujo de Datos (DFD).
+### 4.2. Clonar repositorio
 
-✔ Herramientas
-
-  - OWASP Threat Dragon → DFD + amenazas STRIDE
-
-  - GitHub Projects → gestión de requerimientos y tareas
-
-🧑‍💻 5. FASE 2 — CODE
-✔ Actividades realizadas
-
-1. Creación del repositorio GitHub.
-
-2. Implementación del código de cada microservicio.
-
-3. Configuración de hooks de seguridad en pre-commit.
-
-4. Análisis estático de seguridad del código (SAST).
-
-5. Análisis de dependencias vulnerables (SCA).
-
-✔ Herramientas implementadas
-* Pre-commit Hooks
-
-  . Gitleaks: detectar secretos, contraseñas, tokens API.
-
-  . TruffleHog (opcional).
-
-🧪 SAST
-
-  * Semgrep (reglas de seguridad general).
-
-  * Bandit (si el servicio usa Python).
-
-📦 SCA
-
-  * Trivy escanea requirements.txt, package.json, etc.
-
-  * OWASP Dependency-Check (opcional).
-
-✔ Resultado
-
-Cada vez que un desarrollador realiza un commit:
-
-  * Se detectan secretos expuestos.
-
-  * Se validan vulnerabilidades en dependencias.
-
-  * Se ejecutan escaneos del código fuente.
+```bash
+git clone https://github.com/drincon12/proyecto-centinela.git
+cd proyecto-centinela
