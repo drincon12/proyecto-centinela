@@ -2,10 +2,12 @@ services:        # Aquí definimos todos los servicios (contenedores) que forman
 
   # Servicio del frontend (interfaz web)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
     container_name: centinela-frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     networks:
