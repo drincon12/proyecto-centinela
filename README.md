@@ -1,135 +1,239 @@
+🛡️ Proyecto Centinela
 
-🛡️ PROYECTO CENTINELA — GRUPO 4
+Arquitectura basada en DevSecOps y Microservicios – Proyecto Final
+
+El Proyecto Centinela es una plataforma diseñada para analizar, clasificar y publicar contenido proveniente de URLs utilizando una arquitectura moderna de microservicios y un enfoque completo DevSecOps. Este documento presenta la versión final profesional del README, integrando la arquitectura completa, el flujo DevSecOps por fases, evidencias del modelado de amenazas, requisitos de seguridad y detalles de implementación del repositorio.
+
+📌 Índice
+
+Descripción General
+
+Arquitectura del Sistema
+
+Diagrama de Componentes
+
+Estructura del Proyecto
+
+Ciclo DevSecOps Implementado
+
+Fase 1: Plan
+
+Fase 2: Code
+
+Fase 3: Build
+
+Fase 4: Test
+
+Fase 5: Release--deploy
+
+Fase 6: Operate--monitor
+
+Modelado de Amenazas y Evidencias
+
+Requisitos de Seguridad
+
+Workflows y Automatización
+
+Tecnologías Utilizadas
+
+Cómo Ejecutar el Proyecto
+
+Contribución
+
+Licencia
+
+🧩 Descripción General
+
+Centinela es una aplicación distribuida basada en microservicios que permite:
+
+Analizar URLs enviadas por el usuario.
+
+Realizar scraping y validar fuentes confiables.
+
+Generar análisis de sentimiento sobre el contenido.
+
+Publicar resultados en redes sociales mediante un servicio automatizado.
+
+Registrar hallazgos y métricas en una base de datos central.
+
+Todo el ciclo de desarrollo está integrado con prácticas DevSecOps, donde la seguridad está embebida desde la planificación hasta la operación.
+
+🏗️ Arquitectura del Sistema
+
+🔹 Diagrama de Componentes
+
+El proyecto cuenta con un diagrama de arquitectura diseñado con OWASP Threat Dragon, ubicado en /docs/diagrams/threat-model.json, donde se representan:
+
+<img width="833" height="558" alt="image" src="https://github.com/user-attachments/assets/403e2b1f-a872-47e0-9fd3-a751fd3b3855" />
 
 
-Plataforma contenerizada DevSecOps para análisis de desinformación y OSINT
+🔹 Estructura del Proyecto
 
-📌 Descripción General
-Centinela es una plataforma de análisis de URLs sospechosas que detecta amenazas, malware y desinformación. Implementa un pipeline DevSecOps completo con herramientas FOSS, integrando seguridad desde la planificación hasta la operación.
+<img width="911" height="391" alt="image" src="https://github.com/user-attachments/assets/3e053071-9ee7-4b92-a879-407eb8e30d52" />
 
-🧱 Arquitectura del Proyecto
-🔧 Componentes
-frontend: React + Vite servido con Nginx
 
-backend: FastAPI para orquestación y endpoints
+Cada microservicio cuenta con su propio Dockerfile, dependencias y procesos CI/CD definidos.
 
-scraping-service: extrae contenido HTML y lo envía a RabbitMQ
+🔄 Ciclo DevSecOps Implementado
 
-publishing-service: publica resultados en cola
+Las seis fases del pipeline DevSecOps fueron aplicadas completamente a este proyecto.
 
-analysis-api: expone resultados vía API
+✅ Fase 1: PLAN (Planificación)
 
-analysis-worker: ejecuta análisis de desinformación
+Actividad: definición de requisitos de seguridad y modelado de amenazas.
+Herramientas FOSS:
 
-postgres: base de datos relacional
+Gestión: GitLab Issues / Taiga.
 
-rabbitmq: broker de mensajería
+Modelado de amenazas: OWASP Threat Dragon (DFD + STRIDE).
 
-grafana: visualización de métricas/logs
+Incluye:
 
-prometheus: recolección de métricas
+Identificación de amenazas: Spoofing, Tampering, Repudiation, Information Disclosure, DoS, Elevación de privilegios.
 
-loki: agregación de logs
+Definición inicial de requisitos de seguridad basada en OWASP ASVS.
 
-promtail: recolección de logs
+✅ Fase 2: CODE (Codificación)
 
-falco: monitoreo de seguridad en tiempo real
+Actividad: desarrollo del código + SAST + SCA pre-commit.
 
-📁 Estructura del Proyecto
-Código
-proyecto-centinela/
-├── backend/
-├── frontend/
-├── scraping-service/
-├── publishing-service/
-├── analysis-api/
-├── analysis-worker/
-├── deploy/
-│   ├── Monitoring/ (Grafana, Prometheus, Loki, Promtail)
-│   └── Security/ (Falco)
-├── docker-compose.yml
-├── .github/workflows/ (CI/CD DevSecOps)
-└── docs/ (diagramas Threat Dragon, evidencias)
-🧠 Diseño de Arquitectura
-Modelado de amenazas con OWASP Threat Dragon (STRIDE + DFD)
+Herramientas FOSS:
 
-Diagrama de componentes completo en docs/
+Gitleaks / TruffleHog → detección de secretos.
 
-Evidencias en Issue #1 y workflows
+Semgrep → reglas de seguridad.
 
-🔐 Pipeline DevSecOps — Fases y Herramientas
-🟣 Fase 1: Planificación
-Actividad: Requisitos de seguridad, modelado de amenazas
+Bandit → análisis Python.
 
-Herramientas: GitHub Issues, OWASP Threat Dragon
+Dependency-Check / Trivy → SCA.
 
-Evidencia: Issue #1
+GitLab/GitHub repository.
 
-🔵 Fase 2: Codificación
-Actividad: Desarrollo, SAST, SCA, pre-commit
+Se añadieron hooks pre-commit para prevenir push de código inseguro.
+
+✅ Fase 3: BUILD (Construcción)
+
+Actividad: CI construye imágenes Docker y ejecuta escaneo.
+
+Herramientas FOSS:
+
+GitLab CI/CD o Jenkins.
+
+Docker + Dockerfile.
+
+Trivy o Grype (escaneo de imagen por CVEs).
+
+✅ Fase 4: TEST (Pruebas)
+
+Actividad: pruebas unitarias + integración + DAST.
 
 Herramientas:
 
-Gitleaks (pre-commit)
+Pytest / Jest.
 
-Semgrep + Bandit (SAST)
+OWASP ZAP → modo baseline scan.
 
-Trivy (SCA)
+✅ Fase 5: RELEASE & DEPLOY
 
-Evidencia: Issue #8
+Actividad: versionado y despliegue automatizado.
 
-🟢 Fase 3: Construcción
-Actividad: Build de imágenes, escaneo de CVEs
+Herramientas:
 
-Herramientas: Docker, Trivy, GitHub Actions
+Infraestructura como Código: Terraform / Ansible.
 
-Evidencia: .github/workflows/devsecops.yml
+Escaneo IaC: Checkov o tfsec.
 
-🟡 Fase 4: Pruebas
-Actividad: Unitarias, integración, DAST
+Orquestación: K3s / Docker Compose.
 
-Herramientas: Pytest, OWASP ZAP (baseline scan)
+Registro: GitLab Container Registry.
 
-Evidencia: ZAP integrado en CI
+✅ Fase 6: OPERATE & MONITOR
 
-🟠 Fase 5: Release & Deploy
-Actividad: Versionado, despliegue con IaC
+Actividad: observabilidad y seguridad en tiempo de ejecución.
 
-Herramientas: Docker Compose, Trivy (IaC scan)
+Herramientas:
 
-Evidencia: docker-compose.yml, deploy/
+Logs: Loki + Promtail + Grafana.
 
-🔴 Fase 6: Operación y Monitoreo
-Actividad: Logs, métricas, seguridad en tiempo real
+Métricas: Prometheus.
 
-Herramientas: Prometheus, Grafana, Loki, Promtail, Falco
+Runtime Security: Falco.
 
-Evidencia: Issue #10
+(Opcional SIEM) Wazuh para correlación.
 
-📊 Observabilidad
-Logs centralizados con Loki + Promtail
+🧨 Modelado de Amenazas y Evidencias
 
-Métricas con Prometheus
+En /docs se almacenan:
 
-Dashboards en Grafana
+Diagramas DFD creados con OWASP Threat Dragon.
 
-Seguridad en tiempo real con Falco
+Archivo exportado JSON del modelo.
 
-⚙️ Requisitos Previos
-Docker y Docker Compose
+Capturas de pantallas de validación STRIDE.
 
-Node.js y npm (para desarrollo local del frontend)
+Amenazas identificadas:
 
-Python 3.11+ con venv (para backend y servicios)
+Riesgo de scraping no validado → mitigado con listas blancas.
 
-Acceso a puertos: 3000, 8000, 9000, 3100, 9090, 17673, 5432
+Inyección en parámetros del análisis NLP.
 
-🚀 Despliegue Local
+Acceso no autorizado al API Gateway.
+
+Exposición excesiva del broker de mensajes.
+
+🔐 Requisitos de Seguridad
+
+Basados en OWASP ASVS Nivel 1 + mejores prácticas DevSecOps:
+
+Autenticación vía tokens API.
+
+Validación estricta de URLs antes de scraping.
+
+Cifrado en tránsito (HTTPS).
+
+Sanitización de contenido antes de NLP.
+
+Roles mínimos en cada microservicio.
+
+Imágenes Docker minimalistas (slim/alpine).
+
+Logs firmados y centralizados.
+
+⚙️ Workflows y Automatización
+
+Incluye workflows YAML dentro de /workflows para:
+
+SAST con Semgrep.
+
+SCA con Trivy.
+
+Construcción de imágenes.
+
+Ejecución de ZAP.
+
+Despliegue automatizado.
+
+🛠️ Tecnologías Utilizadas
+
+Frontend: Vue.js / React
+Backend Gateway: Python FastAPI / Node.js
+Microservicios: Python (Scrapy, BeautifulSoup, NLTK)
+Base de Datos: PostgreSQL / MongoDB
+Mensajería: RabbitMQ o Redis
+CI/CD: GitHub Actions / GitLab CI
+Contenedores: Docker + Compose
+Security Tools: Semgrep, Bandit, Trivy, ZAP, Falco
+
+▶️ Cómo Ejecutar el Proyecto
+
+Despliegue Local
+
 bash
 git clone https://github.com/drincon12/proyecto-centinela.git
 cd proyecto-centinela
 docker compose up -d --build
-Accede a:
+
+- Accede a:
 
 Frontend: http://localhost:3000
 
@@ -138,3 +242,27 @@ Backend: http://localhost:8000
 Grafana: http://localhost:3001
 
 RabbitMQ: http://localhost:17673
+
+Los servicios se levantarán en sus puertos configurados.
+
+🤝 Contribución
+
+Crear rama feature/
+
+Ejecutar pre-commit
+
+Abrir Merge Request
+
+
+👥 Autores
+
+Paola Rincón — Backend, DevSecOps, Seguridad
+Guillermo Medina 
+Carolina Nieto 
+Favian Garcia 
+Brian Pinzon
+
+
+📄 Licencia
+
+Este proyecto está bajo la licencia MIT.
